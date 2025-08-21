@@ -13,6 +13,8 @@ import open from 'open';
 import { EventEmitter } from 'events';
 import { Config } from '../config/config.js';
 import { randomUUID } from 'node:crypto';
+import { createProxyAgent } from '../utils/proxyUtils.js';
+import { fetchWithTimeout } from '../utils/fetch.js';
 
 // OAuth Endpoints
 const QWEN_OAUTH_BASE_URL = 'https://chat.qwen.ai';
@@ -240,6 +242,16 @@ export class QwenOAuth2Client implements IQwenOAuth2Client {
     this.proxy = options.proxy;
   }
 
+  private async fetchWithProxy(url: string, options: RequestInit): Promise<Response> {
+    const agent = createProxyAgent(this.proxy || '', url);
+    const fetchOptions = {
+      ...options,
+      // @ts-ignore - agent is a Node.js specific option
+      agent,
+    };
+    return fetch(url, fetchOptions);
+  }
+
   setCredentials(credentials: QwenCredentials): void {
     this.credentials = credentials;
   }
@@ -274,7 +286,7 @@ export class QwenOAuth2Client implements IQwenOAuth2Client {
       code_challenge_method: options.code_challenge_method,
     };
 
-    const response = await fetch(QWEN_OAUTH_DEVICE_CODE_ENDPOINT, {
+    const response = await this.fetchWithProxy(QWEN_OAUTH_DEVICE_CODE_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -316,7 +328,7 @@ export class QwenOAuth2Client implements IQwenOAuth2Client {
       code_verifier: options.code_verifier,
     };
 
-    const response = await fetch(QWEN_OAUTH_TOKEN_ENDPOINT, {
+    const response = await this.fetchWithProxy(QWEN_OAUTH_TOKEN_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -380,7 +392,7 @@ export class QwenOAuth2Client implements IQwenOAuth2Client {
       client_id: QWEN_OAUTH_CLIENT_ID,
     };
 
-    const response = await fetch(QWEN_OAUTH_TOKEN_ENDPOINT, {
+    const response = await this.fetchWithProxy(QWEN_OAUTH_TOKEN_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

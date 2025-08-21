@@ -8,6 +8,7 @@ import { Buffer } from 'buffer';
 import * as https from 'https';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { randomUUID } from 'crypto';
+import { createProxyAgent } from '../../utils/proxyUtils.js';
 
 import {
   StartSessionEvent,
@@ -464,13 +465,10 @@ export class QwenLogger {
   getProxyAgent() {
     const proxyUrl = this.config?.getProxy();
     if (!proxyUrl) return undefined;
-    // undici which is widely used in the repo can only support http & https proxy protocol,
-    // https://github.com/nodejs/undici/issues/2224
-    if (proxyUrl.startsWith('http')) {
-      return new HttpsProxyAgent(proxyUrl);
-    } else {
-      throw new Error('Unsupported proxy type');
-    }
+    
+    // Use NO_PROXY-aware proxy agent creation
+    const targetUrl = `https://${USAGE_STATS_HOSTNAME}${USAGE_STATS_PATH}`;
+    return createProxyAgent(proxyUrl, targetUrl);
   }
 
   shutdown() {

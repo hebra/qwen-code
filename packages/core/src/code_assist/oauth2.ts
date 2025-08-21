@@ -27,6 +27,7 @@ import {
 } from '../utils/user_account.js';
 import { AuthType } from '../core/contentGenerator.js';
 import readline from 'node:readline';
+import { createProxyAgent } from '../utils/proxyUtils.js';
 
 //  OAuth Client ID used to initiate OAuth2Client class.
 const OAUTH_CLIENT_ID =
@@ -383,21 +384,23 @@ export async function clearCachedCredentialFile() {
   }
 }
 
-async function fetchAndCacheUserInfo(client: OAuth2Client): Promise<void> {
+async function fetchAndCacheUserInfo(client: OAuth2Client, config?: Config): Promise<void> {
   try {
     const { token } = await client.getAccessToken();
     if (!token) {
       return;
     }
 
-    const response = await fetch(
-      'https://www.googleapis.com/oauth2/v2/userinfo',
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+    const agent = config?.getProxy() ? createProxyAgent(config.getProxy()!, userInfoUrl) : undefined;
+    
+    const response = await fetch(userInfoUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+      // @ts-ignore - agent is a Node.js specific option
+      agent,
+    });
 
     if (!response.ok) {
       console.error(

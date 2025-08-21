@@ -106,7 +106,7 @@ describe('getEnvironmentContext', () => {
     expect(parts.length).toBe(1);
     const context = parts[0].text;
 
-    expect(context).toContain("Today's date is Tuesday, August 5, 2025");
+    expect(context).toContain("Today's date is Tuesday 5 August 2025");
     expect(context).toContain(`My operating system is: ${process.platform}`);
     expect(context).toContain(
       "I'm currently working in the directory: /test/dir",

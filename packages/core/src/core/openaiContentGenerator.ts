@@ -27,6 +27,7 @@ import { ApiErrorEvent, ApiResponseEvent } from '../telemetry/types.js';
 import { Config } from '../config/config.js';
 import { openaiLogger } from '../utils/openaiLogger.js';
 import { safeJsonParse } from '../utils/safeJsonParse.js';
+import { getOpenAIProxyConfig } from '../utils/proxyUtils.js';
 
 // OpenAI API type definitions for logging
 interface OpenAIToolCall {
@@ -130,12 +131,16 @@ export class OpenAIContentGenerator implements ContentGenerator {
         : {}),
     };
 
+    // Get NO_PROXY-aware proxy configuration
+    const proxyConfig = getOpenAIProxyConfig(config.getProxy(), baseURL);
+
     this.client = new OpenAI({
       apiKey,
       baseURL,
       timeout: timeoutConfig.timeout,
       maxRetries: timeoutConfig.maxRetries,
       defaultHeaders,
+      ...proxyConfig,
     });
   }
 
