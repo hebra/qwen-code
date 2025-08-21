@@ -63,13 +63,26 @@ export function parseNoProxy(noProxy: string): NoProxyPattern[] {
     } else {
       // Domain name
       const isSubdomain = host.startsWith('.');
-      const cleanHost = isSubdomain ? host.substring(1) : host;
-      patterns.push({ 
-        type: 'domain', 
-        pattern: cleanHost.toLowerCase(), 
-        port, 
-        isSubdomain 
-      });
+      const isWildcard = host.startsWith('*.');
+      
+      if (isWildcard) {
+        // Wildcard domain pattern (*.example.com)
+        const cleanHost = host.substring(2); // Remove '*.'
+        patterns.push({ 
+          type: 'domain', 
+          pattern: cleanHost.toLowerCase(), 
+          port, 
+          isSubdomain: true // Treat wildcard as subdomain match
+        });
+      } else {
+        const cleanHost = isSubdomain ? host.substring(1) : host;
+        patterns.push({ 
+          type: 'domain', 
+          pattern: cleanHost.toLowerCase(), 
+          port, 
+          isSubdomain 
+        });
+      }
     }
   }
 

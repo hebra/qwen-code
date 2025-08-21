@@ -42,6 +42,14 @@ describe('proxyUtils', () => {
       ]);
     });
 
+    it('should parse wildcard domain patterns', () => {
+      const patterns = parseNoProxy('*.example.com,*.test.org');
+      expect(patterns).toEqual([
+        { type: 'domain', pattern: 'example.com', isSubdomain: true },
+        { type: 'domain', pattern: 'test.org', isSubdomain: true }
+      ]);
+    });
+
     it('should parse domain patterns', () => {
       const patterns = parseNoProxy('example.com,test.org');
       expect(patterns).toEqual([
@@ -121,6 +129,15 @@ describe('proxyUtils', () => {
 
     it('should match subdomain patterns', () => {
       const patterns = parseNoProxy('.example.com');
+      expect(matchesNoProxyPattern('https://sub.example.com', patterns)).toBe(true);
+      expect(matchesNoProxyPattern('https://deep.sub.example.com', patterns)).toBe(true);
+      expect(matchesNoProxyPattern('https://example.com', patterns)).toBe(true);
+      expect(matchesNoProxyPattern('https://notexample.com', patterns)).toBe(false);
+    });
+
+    it('should match wildcard domain patterns', () => {
+      const patterns = parseNoProxy('*.example.com');
+      expect(matchesNoProxyPattern('https://api.example.com', patterns)).toBe(true);
       expect(matchesNoProxyPattern('https://sub.example.com', patterns)).toBe(true);
       expect(matchesNoProxyPattern('https://deep.sub.example.com', patterns)).toBe(true);
       expect(matchesNoProxyPattern('https://example.com', patterns)).toBe(true);
