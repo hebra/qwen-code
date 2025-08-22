@@ -37,6 +37,7 @@ import { getErrorMessage } from '../utils/errors.js';
 import { basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { WorkspaceContext } from '../utils/workspaceContext.js';
+import { createProxyAgent } from '../utils/proxyUtils.js';
 
 export const MCP_DEFAULT_TIMEOUT_MSEC = 10 * 60 * 1000; // default to 10 minutes
 
@@ -765,12 +766,17 @@ export async function connectToMcpServer(
           `No www-authenticate header in error, trying to fetch it from server...`,
         );
         try {
+          const proxyUrl = process.env.HTTP_PROXY || process.env.http_proxy;
+          const agent = proxyUrl ? createProxyAgent(proxyUrl, mcpServerConfig.url) : undefined;
+          
           const response = await fetch(mcpServerConfig.url, {
             method: 'HEAD',
             headers: {
               Accept: 'text/event-stream',
             },
             signal: AbortSignal.timeout(5000),
+            // @ts-ignore - agent is a Node.js specific option
+            agent,
           });
 
           if (response.status === 401) {

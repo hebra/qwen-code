@@ -6,6 +6,7 @@
 
 import { MCPOAuthConfig } from './oauth-provider.js';
 import { getErrorMessage } from '../utils/errors.js';
+import { createProxyAgent } from '../utils/proxyUtils.js';
 
 /**
  * OAuth authorization server metadata as per RFC 8414.
@@ -70,7 +71,13 @@ export class OAuthUtils {
     resourceMetadataUrl: string,
   ): Promise<OAuthProtectedResourceMetadata | null> {
     try {
-      const response = await fetch(resourceMetadataUrl);
+      const proxyUrl = process.env.HTTP_PROXY || process.env.http_proxy;
+      const agent = proxyUrl ? createProxyAgent(proxyUrl, resourceMetadataUrl) : undefined;
+      
+      const response = await fetch(resourceMetadataUrl, {
+        // @ts-ignore - agent is a Node.js specific option
+        agent,
+      });
       if (!response.ok) {
         return null;
       }
@@ -93,7 +100,13 @@ export class OAuthUtils {
     authServerMetadataUrl: string,
   ): Promise<OAuthAuthorizationServerMetadata | null> {
     try {
-      const response = await fetch(authServerMetadataUrl);
+      const proxyUrl = process.env.HTTP_PROXY || process.env.http_proxy;
+      const agent = proxyUrl ? createProxyAgent(proxyUrl, authServerMetadataUrl) : undefined;
+      
+      const response = await fetch(authServerMetadataUrl, {
+        // @ts-ignore - agent is a Node.js specific option
+        agent,
+      });
       if (!response.ok) {
         return null;
       }

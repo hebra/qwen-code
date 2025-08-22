@@ -6,6 +6,7 @@
 
 import { execSync } from 'child_process';
 import { ProxyAgent } from 'undici';
+import { createProxyAgent } from '../../../core/src/utils/proxyUtils.js';
 
 /**
  * Checks if a directory is within a git repository hosted on GitHub.
@@ -60,8 +61,13 @@ export const getLatestGitHubRelease = async (
 
     const endpoint = `https://api.github.com/repos/google-github-actions/run-gemini-cli/releases/latest`;
 
+    const proxyUrl = process.env.HTTP_PROXY || process.env.http_proxy;
+    const agent = proxyUrl ? createProxyAgent(proxyUrl, endpoint) : undefined;
+    
     const response = await fetch(endpoint, {
       method: 'GET',
+      // @ts-ignore - agent is a Node.js specific option
+      agent,
       headers: {
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',

@@ -8,6 +8,7 @@ import path from 'node:path';
 import * as fs from 'node:fs';
 import { Writable } from 'node:stream';
 import { ProxyAgent } from 'undici';
+import { createProxyAgent } from '../../../../core/src/utils/proxyUtils.js';
 
 import { CommandContext } from '../../ui/commands/types.js';
 import {
@@ -103,8 +104,13 @@ export const setupGithubCommand: SlashCommand = {
       downloads.push(
         (async () => {
           const endpoint = `https://raw.githubusercontent.com/google-github-actions/run-gemini-cli/refs/tags/${releaseTag}/examples/workflows/${workflow}`;
+          const proxyUrl = process.env.HTTP_PROXY || process.env.http_proxy;
+          const agent = proxyUrl ? createProxyAgent(proxyUrl, endpoint) : undefined;
+          
           const response = await fetch(endpoint, {
             method: 'GET',
+            // @ts-ignore - agent is a Node.js specific option
+            agent,
             dispatcher: proxy ? new ProxyAgent(proxy) : undefined,
             signal: AbortSignal.any([
               AbortSignal.timeout(30_000),
