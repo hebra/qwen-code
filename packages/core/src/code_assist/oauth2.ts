@@ -100,7 +100,7 @@ export async function getOauthClient(
     // Check if we need to retrieve Google Account ID or Email
     if (!getCachedGoogleAccount()) {
       try {
-        await fetchAndCacheUserInfo(client);
+        await fetchAndCacheUserInfo(client, config);
       } catch {
         // Non-fatal, continue with existing auth.
       }
@@ -149,7 +149,7 @@ export async function getOauthClient(
       process.exit(1);
     }
   } else {
-    const webLogin = await authWithWeb(client);
+    const webLogin = await authWithWeb(client, config);
 
     console.log(
       `\n\nCode Assist login required.\n` +
@@ -234,7 +234,7 @@ async function authWithUserCode(client: OAuth2Client): Promise<boolean> {
   return true;
 }
 
-async function authWithWeb(client: OAuth2Client): Promise<OauthWebLogin> {
+async function authWithWeb(client: OAuth2Client, config?: Config): Promise<OauthWebLogin> {
   const port = await getAvailablePort();
   // The hostname used for the HTTP server binding (e.g., '0.0.0.0' in Docker).
   const host = process.env.OAUTH_CALLBACK_HOST || 'localhost';
@@ -278,7 +278,7 @@ async function authWithWeb(client: OAuth2Client): Promise<OauthWebLogin> {
           client.setCredentials(tokens);
           // Retrieve and cache Google Account ID during authentication
           try {
-            await fetchAndCacheUserInfo(client);
+            await fetchAndCacheUserInfo(client, config);
           } catch (error) {
             console.error(
               'Failed to retrieve Google Account ID during authentication:',

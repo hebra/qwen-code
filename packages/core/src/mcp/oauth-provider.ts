@@ -11,6 +11,7 @@ import { openBrowserSecurely } from '../utils/secure-browser-launcher.js';
 import { MCPOAuthToken, MCPOAuthTokenStorage } from './oauth-token-storage.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { OAuthUtils } from './oauth-utils.js';
+import { createProxyAgent } from '../utils/proxyUtils.js';
 
 /**
  * OAuth configuration for an MCP server.
@@ -98,11 +99,13 @@ export class MCPOAuthProvider {
    *
    * @param registrationUrl The client registration endpoint URL
    * @param config OAuth configuration
+   * @param proxyUrl Optional proxy URL
    * @returns The registered client information
    */
   private static async registerClient(
     registrationUrl: string,
     config: MCPOAuthConfig,
+    proxyUrl?: string,
   ): Promise<OAuthClientRegistrationResponse> {
     const redirectUri =
       config.redirectUri ||
@@ -118,12 +121,16 @@ export class MCPOAuthProvider {
       scope: config.scopes?.join(' ') || '',
     };
 
+    const agent = proxyUrl ? createProxyAgent(proxyUrl, registrationUrl) : undefined;
+    
     const response = await fetch(registrationUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(registrationRequest),
+      // @ts-ignore - agent is a Node.js specific option
+      agent,
     });
 
     if (!response.ok) {
@@ -327,6 +334,7 @@ export class MCPOAuthProvider {
    * @param code Authorization code
    * @param codeVerifier PKCE code verifier
    * @param mcpServerUrl The MCP server URL to use as the resource parameter
+   * @param proxyUrl Optional proxy URL
    * @returns The token response
    */
   private static async exchangeCodeForToken(
@@ -334,6 +342,7 @@ export class MCPOAuthProvider {
     code: string,
     codeVerifier: string,
     mcpServerUrl?: string,
+    proxyUrl?: string,
   ): Promise<OAuthTokenResponse> {
     const redirectUri =
       config.redirectUri ||
@@ -366,12 +375,16 @@ export class MCPOAuthProvider {
       );
     }
 
+    const agent = proxyUrl ? createProxyAgent(proxyUrl, config.tokenUrl!) : undefined;
+    
     const response = await fetch(config.tokenUrl!, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
+      // @ts-ignore - agent is a Node.js specific option
+      agent,
     });
 
     if (!response.ok) {
@@ -391,6 +404,7 @@ export class MCPOAuthProvider {
    * @param refreshToken The refresh token
    * @param tokenUrl The token endpoint URL
    * @param mcpServerUrl The MCP server URL to use as the resource parameter
+   * @param proxyUrl Optional proxy URL
    * @returns The new token response
    */
   static async refreshAccessToken(
@@ -398,6 +412,7 @@ export class MCPOAuthProvider {
     refreshToken: string,
     tokenUrl: string,
     mcpServerUrl?: string,
+    proxyUrl?: string,
   ): Promise<OAuthTokenResponse> {
     const params = new URLSearchParams({
       grant_type: 'refresh_token',
@@ -428,12 +443,16 @@ export class MCPOAuthProvider {
       );
     }
 
+    const agent = proxyUrl ? createProxyAgent(proxyUrl, tokenUrl) : undefined;
+    
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
+      // @ts-ignore - agent is a Node.js specific option
+      agent,
     });
 
     if (!response.ok) {

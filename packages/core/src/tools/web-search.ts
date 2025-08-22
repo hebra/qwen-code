@@ -9,6 +9,7 @@ import { Type } from '@google/genai';
 import { SchemaValidator } from '../utils/schemaValidator.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { Config } from '../config/config.js';
+import { createProxyAgent } from '../utils/proxyUtils.js';
 
 interface TavilyResultItem {
   title: string;
@@ -118,7 +119,11 @@ export class WebSearchTool extends BaseTool<
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
-      const response = await fetch('https://api.tavily.com/search', {
+      
+      const tavilyUrl = 'https://api.tavily.com/search';
+      const agent = this.config.getProxy() ? createProxyAgent(this.config.getProxy()!, tavilyUrl) : undefined;
+      
+      const response = await fetch(tavilyUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,6 +136,8 @@ export class WebSearchTool extends BaseTool<
           include_answer: true,
         }),
         signal: controller.signal,
+        // @ts-ignore - agent is a Node.js specific option
+        agent,
       });
       clearTimeout(timeoutId);
 
